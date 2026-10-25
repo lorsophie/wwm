@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wer wird Millionär – Soundboard</title>
+<style>
+  :root{
+    --bg-deep:#040c24;
+    --bg-mid:#0a1c4a;
+    --blue-glow:#3f7bff;
+    --blue-light:#8fb8ff;
+    --gold:#f2b634;
+    --orange:#ff9518;
+    --panel:#0d1f52;
+    --panel-border:#1c3f95;
+    --text:#eaf1ff;
+    --text-dim:#9fb4e6;
+    --green:#1fae5e;
+    --green-glow:#2fe888;
+    --red:#d92e3d;
+    --red-glow:#ff5a67;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;padding:0;min-height:100vh;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at 50% 10%, rgba(63,123,255,0.22) 0%, rgba(63,123,255,0) 40%),
+      repeating-radial-gradient(circle at 50% -10%, transparent 0, transparent 60px, rgba(63,123,255,0.06) 61px, rgba(63,123,255,0.06) 63px),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 55%, var(--bg-deep) 100%);
+    background-attachment:fixed;
+  }
+
+  button{ font-family:inherit; cursor:pointer; }
+
+  /* ---------- Header ---------- */
+  .app-header{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 20px;
+    background:rgba(4,12,36,0.92);
+    border-bottom:1px solid var(--panel-border);
+    backdrop-filter:blur(6px);
+  }
+  .header-title{
+    font-weight:800; letter-spacing:1px; text-transform:uppercase;
+    font-size:15px; color:var(--gold); text-align:center; flex:1;
+  }
+  .header-btn{
+    background:linear-gradient(180deg,#142c72,#0a1638);
+    border:1px solid var(--panel-border); color:var(--text);
+    border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600;
+    text-decoration:none; white-space:nowrap;
+  }
+  .header-btn:hover{ border-color:var(--blue-glow); box-shadow:0 0 12px rgba(63,123,255,0.4); }
+  .stop-btn{
+    background:linear-gradient(180deg,var(--red-glow),var(--red)); border:none; color:#fff;
+    border-radius:8px; padding:8px 16px; font-size:13px; font-weight:800; letter-spacing:1px;
+  }
+  .stop-btn:disabled{ opacity:.35; cursor:default; }
+
+  /* ---------- Toolbar ---------- */
+  .stage{ max-width:1100px; margin:0 auto; padding:20px 16px 60px; }
+  .toolbar{
+    display:flex; flex-wrap:wrap; gap:14px 24px; align-items:center;
+    background:linear-gradient(180deg, rgba(13,31,82,0.85), rgba(6,15,42,0.9));
+    border:1px solid var(--panel-border); border-radius:14px; padding:14px 18px; margin-bottom:12px;
+    font-size:13px; color:var(--text-dim);
+  }
+  .toolbar label{ display:flex; align-items:center; gap:8px; }
+  .toolbar input[type=range]{ width:140px; }
+  .toolbar .hint{ margin-left:auto; font-size:12px; }
+  kbd{ background:#081335; border:1px solid var(--panel-border); border-radius:4px; padding:1px 5px; font-size:11px; color:var(--text); }
+
+  .now-playing{ min-height:22px; font-size:13px; color:var(--text-dim); margin:0 4px 18px; }
+  .now-playing b{ color:var(--gold); }
+
+  /* ---------- Gruppen & Buttons ---------- */
+  .group{ margin-bottom:26px; }
+  .group-title{
+    font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim);
+    margin:0 0 12px; border-left:3px solid var(--gold); padding-left:10px;
+  }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; }
+
+  .sb-btn{
+    position:relative; overflow:hidden;
+    display:flex; align-items:center; gap:12px; text-align:left;
+    padding:14px; min-height:68px; border-radius:12px;
+    background:linear-gradient(160deg,#142c72,#0a1638);
+    border:1px solid var(--panel-border); color:var(--text);
+    transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+  }
+  .sb-btn:hover{ border-color:var(--blue-glow); box-shadow:0 0 12px rgba(63,123,255,0.35); }
+  .sb-btn:active{ transform:scale(.98); }
+  .sb-btn .icon{ font-size:22px; width:28px; text-align:center; flex-shrink:0; }
+  .sb-btn .txt{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .sb-btn .label{ font-weight:700; font-size:14px; }
+  .sb-btn .dur{ font-size:11.5px; color:var(--text-dim); }
+  .sb-btn.good .icon{ color:var(--green-glow); }
+  .sb-btn.bad .icon{ color:var(--red-glow); }
+
+  .sb-btn .progress{
+    position:absolute; left:0; bottom:0; height:4px; width:0;
+    background:var(--gold);
+  }
+  .sb-btn.playing{
+    border-color:var(--gold);
+    box-shadow:0 0 16px rgba(242,182,52,0.45);
+    background:linear-gradient(160deg,#3a2c08,#1a1404);
+  }
+  .sb-btn.playing .dur::after{ content:' · läuft'; color:var(--gold); }
+
+  @media (max-width:520px){
+    .app-header{ padding:10px 16px; }
+    .header-title{ font-size:13px; }
+    .grid{ grid-template-columns:repeat(2,1fr); }
+    .toolbar .hint{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <a class="header-btn" href="index.html">← Zum Spiel</a>
+  <div class="header-title">Soundboard</div>
+  <button class="stop-btn" id="btn-stop" disabled>■ Stopp</button>
+</div>
+
+<div class="stage">
+  <div class="toolbar">
+    <label>🔊 <input type="range" id="volume-range" min="0" max="100"></label>
+    <label><input type="checkbox" id="mute-check"> Stumm</label>
+    <label><input type="checkbox" id="layer-check"> Mehrere Sounds gleichzeitig</label>
+    <span class="hint"><kbd>Leertaste</kbd> / <kbd>Esc</kbd> stoppt alles</span>
+  </div>
+  <div class="now-playing" id="now-playing"></div>
+  <div id="board"></div>
+</div>
+
+<script src="sounds.js"></script>
+<script>
+const board = document.getElementById('board');
+const labels = {};
+
+SOUND_GROUPS.forEach(group => {
+  const section = document.createElement('section');
+  section.className = 'group';
+  const h = document.createElement('h2');
+  h.className = 'group-title';
+  h.textContent = group.title;
+  section.appendChild(h);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  group.sounds.forEach(s => {
+    labels[s.key] = s.label + (group.title.startsWith('Runde') ? ` (${group.title.split(' · ')[0]})` : '');
+    const btn = document.createElement('button');
+    btn.className = 'sb-btn' + (s.tone ? ' ' + s.tone : '');
+    btn.dataset.sound = s.key;
+    btn.title = `sounds/${s.key}.mp3`;
+    btn.innerHTML = `
+      <span class="icon">${s.icon}</span>
+      <span class="txt"><span class="label"></span><span class="dur">${s.dur}</span></span>
+      <span class="progress"></span>`;
+    btn.querySelector('.label').textContent = s.label;
+    btn.addEventListener('click', () => SoundEngine.toggle(s.key));
+    grid.appendChild(btn);
+  });
+  section.appendChild(grid);
+  board.appendChild(section);
+});
+
+/* ---------- Status & Fortschritt ---------- */
+const stopBtn = document.getElementById('btn-stop');
+const nowPlaying = document.getElementById('now-playing');
+
+function updateStatus(){
+  const keys = SoundEngine.playingKeys();
+  stopBtn.disabled = keys.length === 0;
+  nowPlaying.innerHTML = keys.length
+    ? 'Läuft: ' + keys.map(k => `<b>${labels[k] || k}</b>`).join(', ')
+    : '';
+  document.querySelectorAll('.sb-btn:not(.playing) .progress').forEach(p => { p.style.width = '0'; });
+}
+SoundEngine.onChange(updateStatus);
+
+setInterval(() => {
+  SoundEngine.playingKeys().forEach(key => {
+    const a = SoundEngine.getAudio(key);
+    const bar = document.querySelector(`.sb-btn[data-sound="${key}"] .progress`);
+    if(a && bar && a.duration) bar.style.width = (a.currentTime / a.duration * 100) + '%';
+  });
+}, 200);
+
+/* ---------- Bedienelemente ---------- */
+const volumeRange = document.getElementById('volume-range');
+const muteCheck = document.getElementById('mute-check');
+const layerCheck = document.getElementById('layer-check');
+
+volumeRange.value = Math.round(SoundEngine.getVolume() * 100);
+muteCheck.checked = SoundEngine.isMuted();
+layerCheck.checked = loadSetting('layer', false);
+SoundEngine.setExclusive(!layerCheck.checked);
+
+volumeRange.addEventListener('input', e => SoundEngine.setVolume(Number(e.target.value) / 100));
+muteCheck.addEventListener('change', e => SoundEngine.setMuted(e.target.checked));
+layerCheck.addEventListener('change', e => {
+  SoundEngine.setExclusive(!e.target.checked);
+  saveSetting('layer', e.target.checked);
+});
+stopBtn.addEventListener('click', () => SoundEngine.stopAll());
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' || e.code === 'Space'){
+    e.preventDefault();
+    SoundEngine.stopAll();
+  }
+});
+</script>
+</body>
+</html>
