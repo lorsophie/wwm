@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wer wird Millionär – Spiel</title>
+<style>
+  :root{
+    --bg-deep:#040c24;
+    --bg-mid:#0a1c4a;
+    --blue-glow:#3f7bff;
+    --blue-light:#8fb8ff;
+    --gold:#f2b634;
+    --orange:#ff9518;
+    --panel:#0d1f52;
+    --panel-border:#1c3f95;
+    --text:#eaf1ff;
+    --text-dim:#9fb4e6;
+    --green:#1fae5e;
+    --green-glow:#2fe888;
+    --red:#d92e3d;
+    --red-glow:#ff5a67;
+    --grey:#3a4566;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;padding:0;min-height:100vh;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(circle at 50% 10%, rgba(63,123,255,0.22) 0%, rgba(63,123,255,0) 40%),
+      repeating-radial-gradient(circle at 50% -10%, transparent 0, transparent 60px, rgba(63,123,255,0.06) 61px, rgba(63,123,255,0.06) 63px),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 55%, var(--bg-deep) 100%);
+    background-attachment:fixed;
+  }
+
+  button{ font-family:inherit; cursor:pointer; }
+
+  /* ---------- Header ---------- */
+  .app-header{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 20px;
+    background:rgba(4,12,36,0.9);
+    border-bottom:1px solid var(--panel-border);
+    backdrop-filter:blur(6px);
+  }
+  .header-title{
+    font-weight:800; letter-spacing:1px; text-transform:uppercase;
+    font-size:15px; color:var(--gold); text-align:center; flex:1;
+  }
+  .header-side{ display:flex; gap:8px; min-width:120px; }
+  .header-side.right{ justify-content:flex-end; }
+  .header-btn{
+    background:linear-gradient(180deg,#142c72,#0a1638);
+    border:1px solid var(--panel-border); color:var(--text);
+    border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600;
+    transition:all .15s ease;
+  }
+  .header-btn:hover:not(:disabled){ border-color:var(--blue-glow); box-shadow:0 0 12px rgba(63,123,255,0.4); }
+  .header-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .header-btn.quit{ color:#ffb3b8; }
+
+  .popover{
+    position:absolute; top:56px; right:20px; z-index:60;
+    background:var(--panel); border:1px solid var(--panel-border); border-radius:10px;
+    padding:16px; width:220px; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  .popover h4{ margin:0 0 10px; font-size:13px; color:var(--gold); text-transform:uppercase; letter-spacing:1px; }
+  .popover label{ font-size:12px; color:var(--text-dim); display:block; margin-bottom:6px; }
+  .popover input[type=range]{ width:100%; }
+  .popover .row{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; font-size:13px; }
+  .popover button.small{ margin-top:12px; width:100%; padding:8px; border-radius:6px; border:1px solid var(--panel-border); background:#122; color:var(--text); background:#0f2358;}
+  .hidden{ display:none !important; }
+
+  /* ---------- Layout wrapper ---------- */
+  .stage{ max-width:1100px; margin:0 auto; padding:26px 18px 60px; }
+
+  /* ---------- Setup screens ---------- */
+  .setup-screen{ text-align:center; padding:40px 10px; }
+  .setup-screen h2{
+    font-size:clamp(20px,4vw,30px); color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin-bottom:26px;
+  }
+  .card-row{ display:flex; gap:22px; justify-content:center; flex-wrap:wrap; }
+  .choice-card{
+    width:250px; background:linear-gradient(160deg,#142c72,#0a1638);
+    border:1px solid var(--panel-border); border-radius:14px; padding:24px 18px;
+    text-align:left; transition:all .2s ease;
+  }
+  .choice-card:hover{ border-color:var(--blue-glow); transform:translateY(-3px); box-shadow:0 10px 26px rgba(63,123,255,0.3); }
+  .choice-card h3{ margin:0 0 8px; color:var(--text); font-size:18px; }
+  .choice-card p{ margin:0 0 16px; color:var(--text-dim); font-size:13px; line-height:1.5; }
+  .choice-card button{
+    width:100%; padding:10px; border-radius:8px; border:none; font-weight:700;
+    background:linear-gradient(180deg,var(--blue-light),var(--blue-glow)); color:#04102c;
+  }
+  .choice-card button + button{ margin-top:8px; }
+  .choice-card{ display:flex; flex-direction:column; }
+  .choice-card p{ flex:1; }
+  .choice-card button.alt{ background:transparent; border:1px solid var(--blue-light); color:var(--blue-light); }
+  .choice-card button.alt:hover{ background:rgba(143,184,255,0.12); }
+
+  .team-setup-list{ max-width:420px; margin:0 auto 20px; display:flex; flex-direction:column; gap:10px; }
+  .team-input-row{ display:flex; gap:8px; align-items:center; }
+  .team-input-row input{
+    flex:1; padding:10px 12px; border-radius:8px; border:1px solid var(--panel-border);
+    background:#081335; color:var(--text); font-size:14px;
+  }
+  .team-input-row button{
+    background:#3a1420; border:1px solid var(--red-glow); color:var(--red-glow);
+    border-radius:8px; width:34px; height:36px; font-size:14px;
+  }
+  .setup-actions{ display:flex; gap:12px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+  .btn-ghost{
+    background:transparent; border:1px solid var(--panel-border); color:var(--text-dim);
+    border-radius:8px; padding:10px 18px; font-size:14px;
+  }
+  .btn-primary{
+    background:linear-gradient(180deg,var(--gold),#b9820f); border:none; color:#2b1c00;
+    border-radius:8px; padding:10px 22px; font-size:14px; font-weight:800;
+  }
+  .btn-primary:disabled{ opacity:.4; }
+
+  /* ---------- Game area ---------- */
+  .game-area{ display:flex; flex-direction:column; gap:20px; }
+
+  .solo-layout{ display:grid; grid-template-columns:280px 1fr; gap:20px; }
+  @media (max-width:720px){ .solo-layout{ grid-template-columns:1fr; } }
+
+  .panel-box{
+    background:linear-gradient(180deg, rgba(13,31,82,0.85), rgba(6,15,42,0.9));
+    border:1px solid var(--panel-border); border-radius:14px; padding:18px;
+  }
+  .panel-title{ font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--text-dim); margin:0 0 14px; border-left:3px solid var(--gold); padding-left:10px; }
+
+  .jokers-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(80px,1fr)); gap:10px; }
+  .joker-btn{
+    display:flex; align-items:center; justify-content:center; padding:0;
+    aspect-ratio:1; width:100%;
+    background:linear-gradient(160deg,#142c72,#0a1638); border:1px solid var(--panel-border);
+    border-radius:10px; overflow:hidden;
+  }
+  .joker-btn img, .joker-btn .icon-fallback{ width:100%; height:100%; object-fit:cover; }
+  .joker-btn .icon-fallback{ display:flex; align-items:center; justify-content:center; background:rgba(63,123,255,0.15); font-size:28px; }
+  .joker-btn:hover:not(:disabled){ border-color:var(--blue-glow); box-shadow:0 0 12px rgba(63,123,255,0.35); }
+  .joker-btn:disabled{ opacity:.35; filter:grayscale(1); cursor:not-allowed; }
+
+  .safety-line{ margin-top:14px; font-size:12.5px; color:var(--text-dim); }
+  .safety-line b{ color:#fff; }
+
+  .ladder-panel .ladder-row{
+    display:grid; grid-template-columns:26px 1fr 20px; align-items:center;
+    padding:8px 12px; border-radius:6px; margin-bottom:4px; font-weight:700; font-size:14px;
+    color:var(--orange);
+  }
+  .ladder-row .rnd{ opacity:.75; font-weight:600; font-size:12px; text-align:left; }
+  .ladder-row .amt{ text-align:center; }
+  .ladder-row.milestone{ color:#fff; }
+  .ladder-row.active{ background:var(--orange); color:#111; box-shadow:0 0 14px rgba(255,149,24,0.6); }
+  .ladder-row .shield{ font-size:12px; text-align:right; }
+
+  .controls-panel{
+    display:flex; gap:14px; justify-content:center; flex-wrap:wrap; padding:6px 0 2px;
+  }
+  .ctrl-btn{
+    min-width:150px; padding:16px 22px; border-radius:12px; border:none; font-size:15px; font-weight:800;
+    letter-spacing:1px; text-transform:uppercase; color:#04102c; transition:all .12s ease;
+  }
+  .ctrl-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .ctrl-btn.start{ background:linear-gradient(180deg,var(--blue-light),var(--blue-glow)); color:#04102c; }
+  .ctrl-btn.playing{ animation:pulseGlow 1s ease-in-out infinite; }
+  @keyframes pulseGlow{ 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.3);} }
+  .ctrl-btn.login{ background:linear-gradient(180deg,#ffd77a,var(--orange)); }
+  .ctrl-btn.correct{ background:linear-gradient(180deg,var(--green-glow),var(--green)); }
+  .ctrl-btn.wrong{ background:linear-gradient(180deg,var(--red-glow),var(--red)); }
+  .btn-ghost.playing{ border-color:var(--gold); color:var(--gold); box-shadow:0 0 14px rgba(242,182,52,0.45); animation:pulseGlow 1s ease-in-out infinite; }
+  .sound-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:0 0 24px; }
+  .popover select{ width:100%; padding:7px; border-radius:6px; border:1px solid var(--panel-border); background:#081335; color:var(--text); font-size:13px; }
+  a.header-btn{ text-decoration:none; display:inline-flex; align-items:center; }
+  .ctrl-btn.resolve{ background:linear-gradient(180deg,#fff2c4,var(--gold)); }
+
+  /* ---------- Fragen-Anzeige ---------- */
+  .solo-layout.with-question{ grid-template-columns:1fr 280px; }
+  @media (max-width:720px){ .solo-layout.with-question{ grid-template-columns:1fr; } }
+  .main-col{ display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .main-col .controls-panel{ gap:10px; }
+  .main-col .ctrl-btn{ min-width:0; padding:14px 16px; font-size:14px; }
+
+  .q-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .q-head .panel-title{ margin-bottom:12px; }
+  .q-tools{ display:flex; gap:6px; flex-wrap:wrap; }
+  .q-tool{
+    background:transparent; border:1px solid var(--panel-border); color:var(--text-dim);
+    border-radius:6px; padding:5px 10px; font-size:12px; touch-action:none;
+  }
+  .q-tool:hover{ border-color:var(--blue-glow); color:var(--text); }
+  .q-placeholder{ text-align:center; color:var(--text-dim); padding:26px 10px; font-size:14px; }
+
+  /* Sechseck-Balken wie in der Show: äußere Fläche = Rahmen, innere = Inhalt */
+  .hex{
+    --cut:22px;
+    clip-path:polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% 50%, calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 50%);
+    background:var(--blue-light); padding:2px; border:none; width:100%;
+  }
+  .hex-inner{
+    clip-path:polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% 50%, calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 50%);
+    background:linear-gradient(180deg,#0c1f5c,#050d2b);
+    padding:14px calc(var(--cut) + 10px); color:var(--text); height:100%;
+  }
+  .q-text{ margin-bottom:14px; }
+  .q-text .hex-inner{ font-size:clamp(16px,2.4vw,21px); font-weight:600; text-align:center; line-height:1.4; padding-top:20px; padding-bottom:20px; }
+
+  .answers{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+  @media (max-width:600px){ .answers{ grid-template-columns:1fr; } }
+  .answer{ --cut:18px; text-align:left; font-size:15px; transition:filter .15s ease; }
+  .answer .hex-inner{ display:flex; gap:8px; align-items:center; padding-top:11px; padding-bottom:11px; }
+  .answer .letter{ color:var(--orange); font-weight:800; }
+  .answer:hover:not(:disabled){ filter:brightness(1.25); }
+  .answer:disabled{ cursor:default; }
+  .answer.selected{ background:#fff; }
+  .answer.selected .hex-inner{ background:linear-gradient(180deg,#ffb64a,var(--orange)); color:#111; }
+  .answer.selected .letter{ color:#fff; }
+  .answer.correct{ background:#fff; animation:blinkCorrect .45s ease-in-out 4; }
+  .answer.correct .hex-inner{ background:linear-gradient(180deg,var(--green-glow),var(--green)); color:#04210f; }
+  .answer.correct .letter{ color:#fff; }
+  .answer.wrong .hex-inner{ background:linear-gradient(180deg,var(--red-glow),var(--red)); color:#fff; }
+  .answer.wrong .letter{ color:#fff; }
+  .answer.gone{ opacity:.35; background:var(--panel-border); }
+  .answer.gone .txt{ visibility:hidden; }
+  @keyframes blinkCorrect{ 50%{ filter:brightness(1.6); } }
+  .question-panel.peek .answer.is-correct .letter::after{ content:' ✓'; color:var(--green-glow); }
+
+  /* Publikumsjoker */
+  .audience-box{ margin-top:18px; padding-top:14px; border-top:1px solid var(--panel-border); }
+  .audience-bars{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; max-width:420px; margin:0 auto; }
+  .bar-col{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .bar-col.gone{ opacity:.3; }
+  .bar-track{ width:100%; max-width:54px; height:140px; display:flex; align-items:flex-end; background:rgba(143,184,255,0.08); border-radius:6px 6px 0 0; }
+  .bar{ width:100%; background:linear-gradient(180deg,var(--gold),var(--orange)); border-radius:6px 6px 0 0; transform-origin:bottom; }
+  .bar.animate{ animation:growBar 3s cubic-bezier(.2,.7,.3,1) both; }
+  .pct{ font-weight:800; color:var(--gold); font-size:14px; }
+  .pct.animate{ animation:fadeIn .4s ease both; }
+  .bar-letter{ font-weight:800; color:var(--orange); }
+  .vote-btn{ padding:4px 8px; }
+  @keyframes growBar{ from{ transform:scaleY(0); } }
+  @keyframes fadeIn{ from{ opacity:0; } }
+
+  /* Editor für eigene Fragen */
+  .editor-box{ max-width:520px; width:100%; text-align:left; }
+  .editor-box h4{ margin:0 0 12px; color:var(--gold); font-size:14px; text-transform:uppercase; letter-spacing:1px; }
+  .editor-box textarea, .editor-box input[type=text]{
+    width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--panel-border);
+    background:#081335; color:var(--text); font-size:14px; font-family:inherit;
+  }
+  .editor-box textarea{ margin-bottom:10px; resize:vertical; }
+  .ed-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .ed-row .letter{ color:var(--orange); font-weight:800; width:18px; }
+  .ed-unknown{ font-size:13px; color:var(--text-dim); }
+  .ed-hint{ font-size:12px !important; color:var(--text-dim) !important; margin:4px 0 14px !important; }
+
+  .turn-indicator{ text-align:center; font-size:14px; color:var(--text-dim); margin-bottom:2px; }
+  .turn-indicator b{ color:var(--gold); }
+
+  /* ---------- Team layout ---------- */
+  .team-names-row{ display:grid; grid-template-columns:repeat(var(--team-count,2),1fr); gap:16px; }
+  .team-name-badge{
+    text-align:center; padding:10px; border-radius:10px; font-weight:800; letter-spacing:.5px;
+    background:linear-gradient(160deg,#142c72,#0a1638); border:1px solid var(--panel-border); color:var(--text-dim);
+  }
+  .team-name-badge.active{ color:#04102c; background:linear-gradient(180deg,var(--gold),#b9820f); border-color:var(--gold); }
+  .team-name-badge .status{ display:block; font-size:11px; font-weight:600; margin-top:3px; opacity:.85; }
+
+  .teams-columns{ display:grid; grid-template-columns:repeat(var(--team-count,2),1fr); gap:16px; overflow-x:auto; }
+  .team-col{ display:flex; flex-direction:column; gap:12px; opacity:.55; transition:opacity .2s ease; }
+  .team-col.active-col{ opacity:1; }
+  .team-col .panel-box{ padding:14px; }
+
+  /* ---------- Finished screen ---------- */
+  .finished-screen{ text-align:center; padding:30px 10px; }
+  .finished-screen h2{ color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin-bottom:22px; }
+  .result-card{
+    max-width:480px; margin:0 auto 12px; padding:18px 22px; border-radius:12px;
+    background:linear-gradient(160deg,#142c72,#0a1638); border:1px solid var(--panel-border);
+    display:flex; align-items:center; justify-content:space-between; text-align:left;
+  }
+  .result-card.winner{ border-color:var(--gold); box-shadow:0 0 20px rgba(242,182,52,0.35); }
+  .result-card .name{ font-weight:800; font-size:15px; }
+  .result-card .status{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .result-card .amount{ font-size:20px; font-weight:900; color:var(--gold); }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(2,6,20,0.7); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-box{
+    background:var(--panel); border:1px solid var(--panel-border); border-radius:14px;
+    padding:24px; max-width:360px; text-align:center; box-shadow:0 14px 40px rgba(0,0,0,0.5);
+  }
+  .modal-box p{ margin:0 0 18px; font-size:14.5px; line-height:1.5; color:var(--text); }
+  .modal-actions{ display:flex; gap:10px; justify-content:center; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-side left">
+    <button class="header-btn quit" id="btn-quit" disabled>🚪 Beenden</button>
+  </div>
+  <div class="header-title">Wer wird Millionär</div>
+  <div class="header-side right">
+    <a class="header-btn" href="soundboard.html" target="_blank" title="Soundboard in neuem Tab öffnen">🎛️ Soundboard</a>
+    <button class="header-btn" id="btn-volume">🔊</button>
+    <button class="header-btn" id="btn-settings">⚙️</button>
+  </div>
+</div>
+
+<div id="popover-volume" class="popover hidden">
+  <h4>Lautstärke</h4>
+  <label for="volume-range">Sound-Lautstärke</label>
+  <input type="range" id="volume-range" min="0" max="100" value="80">
+  <div class="row">
+    <label for="mute-check" style="margin:0;">Stumm</label>
+    <input type="checkbox" id="mute-check">
+  </div>
+</div>
+
+<div id="popover-settings" class="popover hidden">
+  <h4>Einstellungen</h4>
+  <div class="row" id="settings-info" style="display:block; font-size:12px; color:var(--text-dim);"></div>
+  <label for="music-style" style="margin-top:12px;">Fragemusik</label>
+  <select id="music-style">
+    <option value="spannung">Spannung 1–4 (eigene)</option>
+    <option value="original">Original-Soundtrack</option>
+  </select>
+  <label for="show-questions" style="margin-top:12px;">Fragen auf dem Bildschirm</label>
+  <select id="show-questions">
+    <option value="1">Anzeigen (A–D, 50:50, Publikum)</option>
+    <option value="0">Aus (nur Karten vom Brettspiel)</option>
+  </select>
+  <button class="small" id="btn-restart">🔁 Neues Spiel starten</button>
+</div>
+
+<div class="stage">
+  <div id="app"></div>
+</div>
+
+<div id="modal-root"></div>
+
+<script src="sounds.js"></script>
+<script src="fragen.js"></script>
+<script>
+/* =========================================================
+   Konstanten
+========================================================= */
+const LADDER = [50,100,200,300,500,1000,2000,4000,8000,16000,32000,64000,125000,500000,1000000];
+function fmt(n){ return n.toLocaleString('de-DE') + ' €'; }
+
+const modalRoot = document.getElementById('modal-root');
+
+function closeModal(){ modalRoot.innerHTML = ''; }
+
+function showConfirm(message, onConfirm){
+  modalRoot.innerHTML = '';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const box = document.createElement('div');
+  box.className = 'modal-box';
+  const p = document.createElement('p');
+  p.textContent = message;
+  box.appendChild(p);
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn-ghost';
+  cancelBtn.textContent = 'Abbrechen';
+  cancelBtn.addEventListener('click', closeModal);
+  const okBtn = document.createElement('button');
+  okBtn.className = 'btn-primary';
+  okBtn.textContent = 'Ja';
+  okBtn.addEventListener('click', () => { closeModal(); onConfirm(); });
+  actions.appendChild(cancelBtn);
+  actions.appendChild(okBtn);
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+  modalRoot.appendChild(overlay);
+}
+
+function showAlert(message){
+  modalRoot.innerHTML = '';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const box = document.createElement('div');
+  box.className = 'modal-box';
+  const p = document.createElement('p');
+  p.textContent = message;
+  box.appendChild(p);
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const okBtn = document.createElement('button');
+  okBtn.className = 'btn-primary';
+  okBtn.textContent = 'OK';
+  okBtn.addEventListener('click', closeModal);
+  actions.appendChild(okBtn);
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+  modalRoot.appendChild(overlay);
+}
+
+/* Runde 1 = Fragen 1–5, Runde 2 = 6–10, Runde 3 = 11–14, Runde 4 = Millionenfrage */
+function roundTier(questionIndex){
+  const q = questionIndex + 1;
+  if(q <= 5) return 1;
+  if(q <= 10) return 2;
+  if(q <= 14) return 3;
+  return 4;
+}
+
+function questionMusic(questionIndex){
+  const t = roundTier(questionIndex);
+  return musicStyle === 'original' ? `Runde${t}_Frage` : `Spannung${t}`;
+}
+
+function correctSound(questionIndex){
+  const q = questionIndex + 1;
+  if(q === 5) return 'Sicherheitsstufe1';
+  if(q === 10 && difficulty === 'backup') return 'Sicherheitsstufe2';
+  return `Runde${roundTier(questionIndex)}_Richtig`;
+}
+
+function wrongSound(questionIndex){
+  return `Runde${roundTier(questionIndex)}_Falsch`;
+}
+
+/* =========================================================
+   State
+========================================================= */
+let phase = 'mode-select'; // mode-select | team-setup | difficulty-select | playing | finished
+let gameMode = null;       // 'solo' | 'team'
+let difficulty = null;     // 'backup' | 'risiko'
+let teamNamesDraft = ['Team 1','Team 2'];
+let players = [];
+let activePlayerIndex = 0;
+let boardRoundStarted = false;
+
+let musicStyle = loadSetting('music-style', 'spannung'); // 'spannung' | 'original'
+
+/* =========================================================
+   Audio (Engine siehe sounds.js)
+========================================================= */
+function stopAudio(){ SoundEngine.stopAll(); }
+function playOnce(key){ SoundEngine.play(key); }
+
+// Button, der seinen Sound per Klick startet/stoppt und während des Abspielens pulsiert.
+function soundToggleButton(className, text, key, onToggle){
+  const btn = document.createElement('button');
+  btn.className = className;
+  btn.textContent = text;
+  btn.dataset.sound = key;
+  btn.addEventListener('click', () => {
+    const nowPlaying = SoundEngine.toggle(key);
+    if(onToggle) onToggle(nowPlaying);
+  });
+  return btn;
+}
+
+/* =========================================================
+   Fragen auf dem Bildschirm (Katalog siehe fragen.js)
+========================================================= */
+const LETTERS = ['A','B','C','D'];
+const FRAGEN_LIST = typeof FRAGEN !== 'undefined' ? FRAGEN : [];
+let showQuestions = loadSetting('show-questions', true);
+let usedQuestions = new Set(); // bleibt über mehrere Spiele eines Abends erhalten
+let round = emptyRound();
+let pendingFinish = false;     // Spiel ist vorbei, Auflösung bleibt aber noch sichtbar
+
+function emptyRound(){
+  return {
+    question:null,   // { frage, antworten:[4], richtig: 0–3 | null }
+    forIndex:null, owner:null, label:'',
+    shown:false,     // Frage ist auf dem Bildschirm sichtbar
+    selected:null,   // eingeloggte Antwort
+    hidden:[],       // durch 50:50 entfernte Antworten
+    audience:null,   // { votes:[4], counting:bool, animated:bool }
+    revealed:false,
+    result:null      // 'correct' | 'wrong' | null (für Fragen ohne bekannte Lösung)
+  };
+}
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function drawQuestion(questionIndex){
+  const stufe = questionIndex + 1;
+  let pool = FRAGEN_LIST.map((f, id) => ({ ...f, id })).filter(f => !usedQuestions.has(f.id));
+  if(!pool.length){ usedQuestions.clear(); pool = FRAGEN_LIST.map((f, id) => ({ ...f, id })); }
+  if(!pool.length) return null;
+  const best = Math.min(...pool.map(f => Math.abs(f.stufe - stufe)));
+  const candidates = pool.filter(f => Math.abs(f.stufe - stufe) === best);
+  const f = candidates[Math.floor(Math.random() * candidates.length)];
+  usedQuestions.add(f.id);
+  const order = shuffle([0,1,2,3]);
+  return { frage:f.frage, antworten:order.map(i => f.antworten[i]), richtig:order.indexOf(f.richtig) };
+}
+
+// Welche Frage gerade dran ist: Index auf der Leiter + (im Team-Modus) Teamname
+function questionContext(){
+  if(gameMode === 'team'){
+    const p = players[activePlayerIndex];
+    return { index:p.questionIndex, owner:p.name };
+  }
+  const p = players.find(pl => pl.status === 'playing') || players[0];
+  return { index:p.questionIndex, owner:null };
+}
+
+function roundMatches(ctx){
+  return round.question && !round.revealed && round.forIndex === ctx.index && round.owner === ctx.owner;
+}
+
+function prepareRound(ctx, question){
+  round = emptyRound();
+  round.forIndex = ctx.index;
+  round.owner = ctx.owner;
+  round.label = `${ctx.owner ? ctx.owner + ' · ' : ''}Frage ${ctx.index + 1} · ${fmt(LADDER[ctx.index])}`;
+  round.question = question || drawQuestion(ctx.index);
+}
+
+// Wird von „Runde starten“ aufgerufen
+function beginQuestion(){
+  if(!showQuestions) return;
+  const ctx = questionContext();
+  if(!roundMatches(ctx)) prepareRound(ctx);
+  round.shown = !!round.question;
+}
+
+function markRevealed(result){
+  if(!round.shown) return;
+  round.revealed = true;
+  round.result = result;
+}
+
+function selectAnswer(i){
+  if(!round.shown || round.revealed || round.hidden.includes(i)) return;
+  round.selected = i;
+  if(!SoundEngine.isPlaying('Einloggen')) playOnce('Einloggen');
+  render();
+}
+
+function applyJokerEffect(key){
+  if(!showQuestions || !round.shown || round.revealed) return;
+  const q = round.question;
+  if(key === 'fifty' && q.richtig != null){
+    const wrong = [0,1,2,3].filter(i => i !== q.richtig && !round.hidden.includes(i));
+    round.hidden = round.hidden.concat(shuffle(wrong).slice(0, 2));
+    if(round.hidden.includes(round.selected)) round.selected = null;
+    if(round.audience && !round.audience.counting) round.audience.votes = simulateAudience();
+  }
+  if(key === 'audience'){
+    const counting = q.richtig == null;
+    round.audience = { votes: counting ? [0,0,0,0] : simulateAudience(), counting, animated:false };
+  }
+}
+
+// Publikum: je höher die Frage, desto unsicherer – ab Runde 3 kann es auch danebenliegen
+function simulateAudience(){
+  const q = round.question;
+  const visible = [0,1,2,3].filter(i => !round.hidden.includes(i));
+  const others = visible.filter(i => i !== q.richtig);
+  let accuracy = 0.8 - round.forIndex * 0.03 + (Math.random() - 0.5) * 0.2;
+  if(visible.length === 2) accuracy += 0.1;
+  accuracy = Math.min(0.95, Math.max(0.2, accuracy));
+
+  const votes = [0,0,0,0];
+  votes[q.richtig] = accuracy * 100;
+  const weights = others.map(() => 0.3 + Math.random());
+  const wSum = weights.reduce((a, b) => a + b, 0);
+  others.forEach((i, n) => { votes[i] = (1 - accuracy) * 100 * weights[n] / wSum; });
+
+  const rounded = votes.map(v => Math.round(v));
+  rounded[q.richtig] += 100 - rounded.reduce((a, b) => a + b, 0);
+  return rounded;
+}
+
+function openQuestionEditor(){
+  const ctx = round.shown && !round.revealed
+    ? { index:round.forIndex, owner:round.owner }
+    : questionContext();
+  const existing = roundMatches(ctx) ? round.question : null;
+
+  modalRoot.innerHTML = '';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const box = document.createElement('div');
+  box.className = 'modal-box editor-box';
+  box.innerHTML = `
+    <h4>Eigene Frage · Frage ${ctx.index + 1} (${fmt(LADDER[ctx.index])})</h4>
+    <textarea id="ed-frage" rows="2" placeholder="Frage von der Karte eintippen …"></textarea>
+    ${LETTERS.map((l, i) => `
+      <label class="ed-row">
+        <input type="radio" name="ed-richtig" value="${i}" title="Richtige Antwort">
+        <span class="letter">${l}:</span>
+        <input type="text" id="ed-a${i}" placeholder="Antwort ${l}">
+      </label>`).join('')}
+    <label class="ed-row ed-unknown"><input type="radio" name="ed-richtig" value="" checked> Richtige Antwort nicht festlegen</label>
+    <p class="ed-hint">Mit festgelegter Lösung funktionieren 50:50, Publikums-Simulation und „Auflösen“.</p>
+  `;
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn-ghost';
+  cancelBtn.textContent = 'Abbrechen';
+  cancelBtn.addEventListener('click', closeModal);
+  const okBtn = document.createElement('button');
+  okBtn.className = 'btn-primary';
+  okBtn.textContent = 'Übernehmen';
+  actions.appendChild(cancelBtn);
+  actions.appendChild(okBtn);
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  modalRoot.appendChild(overlay);
+
+  if(existing){
+    box.querySelector('#ed-frage').value = existing.frage;
+    existing.antworten.forEach((a, i) => { box.querySelector(`#ed-a${i}`).value = a; });
+    if(existing.richtig != null) box.querySelector(`input[name=ed-richtig][value="${existing.richtig}"]`).checked = true;
+  }
+  box.querySelector('#ed-frage').focus();
+
+  okBtn.addEventListener('click', () => {
+    const frage = box.querySelector('#ed-frage').value.trim();
+    const antworten = LETTERS.map((_, i) => box.querySelector(`#ed-a${i}`).value.trim());
+    if(!frage || antworten.some(a => !a)){ box.querySelector('.ed-hint').textContent = 'Bitte Frage und alle vier Antworten ausfüllen.'; return; }
+    const r = box.querySelector('input[name=ed-richtig]:checked').value;
+    const question = { frage, antworten, richtig: r === '' ? null : Number(r) };
+    const wasShown = round.shown && roundMatches(ctx);
+    prepareRound(ctx, question);
+    round.shown = wasShown;
+    closeModal();
+    render();
+  });
+}
+
+function buildQuestionPanel(){
+  const panel = document.createElement('div');
+  panel.className = 'panel-box question-panel';
+
+  const head = document.createElement('div');
+  head.className = 'q-head';
+  const title = document.createElement('p');
+  title.className = 'panel-title';
+  head.appendChild(title);
+  const tools = document.createElement('div');
+  tools.className = 'q-tools';
+  head.appendChild(tools);
+  panel.appendChild(head);
+
+  function tool(text, tip, onClick){
+    const b = document.createElement('button');
+    b.className = 'q-tool';
+    b.textContent = text;
+    b.title = tip;
+    if(onClick) b.addEventListener('click', onClick);
+    tools.appendChild(b);
+    return b;
+  }
+
+  if(!round.shown){
+    const ctx = questionContext();
+    title.textContent = `${ctx.owner ? ctx.owner + ' · ' : ''}Frage ${ctx.index + 1} · ${fmt(LADDER[ctx.index])}`;
+    if(!pendingFinish) tool('✏️ Eigene Frage', 'Frage von der Spielkarte eintippen', openQuestionEditor);
+    const ph = document.createElement('div');
+    ph.className = 'q-placeholder';
+    ph.textContent = roundMatches(ctx)
+      ? '✓ Eigene Frage vorbereitet – „Runde starten“ zeigt sie an.'
+      : '„Runde starten“ zeigt die Frage an.';
+    panel.appendChild(ph);
+    return panel;
+  }
+
+  const q = round.question;
+  title.textContent = round.label;
+  if(!round.revealed){
+    tool('🔀 Andere Frage', 'Neue Frage aus dem Katalog ziehen', () => {
+      prepareRound({ index:round.forIndex, owner:round.owner });
+      round.shown = true;
+      render();
+    });
+    tool('✏️ Eigene Frage', 'Frage von der Spielkarte eintippen', openQuestionEditor);
+    if(q.richtig != null){
+      // Nur solange gedrückt: Lösung für den Moderator markieren
+      const peek = tool('🤫 Lösung', 'Gedrückt halten: zeigt dem Moderator die Lösung');
+      const on = (e) => { e.preventDefault(); panel.classList.add('peek'); };
+      const off = () => panel.classList.remove('peek');
+      peek.addEventListener('pointerdown', on);
+      ['pointerup','pointerleave','pointercancel'].forEach(ev => peek.addEventListener(ev, off));
+    }
+  } else if(!pendingFinish){
+    tool('✏️ Nächste Frage eingeben', 'Frage von der Spielkarte für die nächste Runde eintippen', openQuestionEditor);
+  }
+
+  const qText = document.createElement('div');
+  qText.className = 'hex q-text';
+  qText.innerHTML = '<div class="hex-inner"></div>';
+  qText.firstChild.textContent = q.frage;
+  panel.appendChild(qText);
+
+  const answers = document.createElement('div');
+  answers.className = 'answers';
+  q.antworten.forEach((text, i) => {
+    const btn = document.createElement('button');
+    let cls = 'hex answer';
+    if(round.hidden.includes(i)) cls += ' gone';
+    if(round.selected === i) cls += ' selected';
+    if(q.richtig === i) cls += ' is-correct';
+    if(round.revealed){
+      if(q.richtig != null){
+        if(i === q.richtig) cls += ' correct';
+        else if(i === round.selected) cls += ' wrong';
+      } else if(i === round.selected && round.result){
+        cls += round.result === 'correct' ? ' correct' : ' wrong';
+      }
+    }
+    btn.className = cls;
+    btn.disabled = round.revealed || round.hidden.includes(i);
+    btn.innerHTML = `<div class="hex-inner"><span class="letter">${LETTERS[i]}:</span><span class="txt"></span></div>`;
+    btn.querySelector('.txt').textContent = text;
+    btn.addEventListener('click', () => selectAnswer(i));
+    answers.appendChild(btn);
+  });
+  panel.appendChild(answers);
+
+  if(round.audience) panel.appendChild(buildAudience());
+  return panel;
+}
+
+function buildAudience(){
+  const aud = round.audience;
+  const box = document.createElement('div');
+  box.className = 'audience-box';
+
+  const head = document.createElement('div');
+  head.className = 'q-head';
+  head.innerHTML = `<p class="panel-title">🙋 Publikum${aud.counting ? ' – Handzeichen zählen' : ''}</p>`;
+  const tools = document.createElement('div');
+  tools.className = 'q-tools';
+  if(!round.revealed){
+    const toggle = document.createElement('button');
+    toggle.className = 'q-tool';
+    if(aud.counting && round.question.richtig != null){
+      toggle.textContent = '🎲 Simulieren';
+      toggle.addEventListener('click', () => { round.audience = { votes:simulateAudience(), counting:false, animated:false }; render(); });
+      tools.appendChild(toggle);
+    } else if(!aud.counting){
+      toggle.textContent = '🗳 Selbst abstimmen';
+      toggle.title = 'Die Mitspielenden stimmen per Handzeichen ab';
+      toggle.addEventListener('click', () => { round.audience = { votes:[0,0,0,0], counting:true, animated:true }; render(); });
+      tools.appendChild(toggle);
+    }
+    if(aud.counting){
+      const reset = document.createElement('button');
+      reset.className = 'q-tool';
+      reset.textContent = '↺ Zurücksetzen';
+      reset.addEventListener('click', () => { aud.votes = [0,0,0,0]; render(); });
+      tools.appendChild(reset);
+    }
+  }
+  head.appendChild(tools);
+  box.appendChild(head);
+
+  const total = aud.votes.reduce((a, b) => a + b, 0);
+  const bars = document.createElement('div');
+  bars.className = 'audience-bars';
+  aud.votes.forEach((v, i) => {
+    const pct = total ? Math.round(v / total * 100) : 0;
+    const col = document.createElement('div');
+    col.className = 'bar-col' + (round.hidden.includes(i) ? ' gone' : '');
+    const anim = aud.animated ? '' : ' animate';
+    col.innerHTML = `
+      <span class="pct${anim}" style="animation-delay:${3 + i * 0.15}s">${pct}%</span>
+      <div class="bar-track"><div class="bar${anim}" style="height:${pct}%; animation-delay:${i * 0.15}s"></div></div>
+      <span class="bar-letter">${LETTERS[i]}</span>`;
+    if(aud.counting && !round.revealed && !round.hidden.includes(i)){
+      const plus = document.createElement('button');
+      plus.className = 'q-tool vote-btn';
+      plus.textContent = `+1 (${v})`;
+      plus.addEventListener('click', () => { aud.votes[i]++; render(); });
+      col.appendChild(plus);
+    }
+    bars.appendChild(col);
+  });
+  aud.animated = true;
+  box.appendChild(bars);
+  return box;
+}
+
+function loadImgOrFallback(imgEl, fallbackHTML){
+  imgEl.onerror = function(){
+    const span = document.createElement('span');
+    span.className = 'icon-fallback';
+    span.textContent = fallbackHTML;
+    imgEl.replaceWith(span);
+  };
+}
+
+/* =========================================================
+   Spieler-Modell
+========================================================= */
+function makePlayer(name){
+  const jokers = { fifty:false, phone:false, audience:false };
+  if(difficulty === 'risiko'){ jokers.person = false; }
+  return {
+    name,
+    questionIndex: 0,
+    winnings: 0,
+    safetyNet: 0,
+    status: 'playing', // playing | ended | lost | won
+    roundStarted: false,
+    jokers
+  };
+}
+
+function applyMilestone(player, answeredIndex){
+  const qNum = answeredIndex + 1;
+  if(qNum === 5){ player.safetyNet = LADDER[4]; }
+  if(qNum === 10 && difficulty === 'backup'){ player.safetyNet = LADDER[9]; }
+}
+
+function rotateTurn(){
+  const n = players.length;
+  for(let step = 1; step <= n; step++){
+    const idx = (activePlayerIndex + step) % n;
+    if(players[idx].status === 'playing'){ activePlayerIndex = idx; return true; }
+  }
+  return false;
+}
+
+// Bei sichtbarer Auflösung erst „Zum Ergebnis“ anbieten, statt sofort umzuschalten
+function finishGame(){
+  if(showQuestions && round.revealed) pendingFinish = true;
+  else phase = 'finished';
+}
+
+function afterAction(player){
+  if(gameMode === 'team'){
+    const stillAny = rotateTurn();
+    if(!stillAny){ finishGame(); }
+  } else {
+    if(player.status !== 'playing'){ finishGame(); }
+  }
+  render();
+}
+
+function answerCorrect(player){
+  markRevealed('correct');
+  const idx = player.questionIndex;
+  applyMilestone(player, idx);
+  player.winnings = LADDER[idx];
+  playOnce(correctSound(idx));
+  if(idx === 14){
+    player.status = 'won';
+  } else {
+    player.questionIndex = idx + 1;
+    player.roundStarted = false;
+  }
+  afterAction(player);
+}
+
+function answerWrong(player){
+  markRevealed('wrong');
+  playOnce(wrongSound(player.questionIndex));
+  player.winnings = player.safetyNet;
+  player.status = 'lost';
+  afterAction(player);
+}
+
+function endGame(player){
+  player.status = 'ended';
+  round = emptyRound();
+  player.roundStarted = false;
+  if(player.winnings > 0) playOnce('Spielende_Gewinn1');
+  else stopAudio();
+  afterAction(player);
+}
+
+/* =========================================================
+   Rendering
+========================================================= */
+const app = document.getElementById('app');
+
+function render(){
+  app.innerHTML = '';
+  document.getElementById('btn-quit').disabled = !(phase === 'playing' && !pendingFinish);
+
+  if(phase === 'mode-select') renderModeSelect();
+  else if(phase === 'team-setup') renderTeamSetup();
+  else if(phase === 'difficulty-select') renderDifficultySelect();
+  else if(phase === 'playing') renderPlaying();
+  else if(phase === 'finished') renderFinished();
+  SoundEngine.sync(app);
+}
+
+function renderModeSelect(){
+  const wrap = document.createElement('div');
+  wrap.className = 'setup-screen';
+  wrap.innerHTML = `
+    <h2>Wie möchtest du spielen?</h2>
+    <div class="sound-row">
+      <button class="btn-ghost" data-sound="Intro" id="play-intro">🎬 Intro abspielen</button>
+    </div>
+    <div class="card-row">
+      <div class="choice-card">
+        <h3>🧑 Solo</h3>
+        <p>Eine Person spielt allein durch alle 15 Fragen.</p>
+        <button data-mode="solo" data-questions="1">❓ Mit Fragen am Bildschirm</button>
+        <button data-mode="solo" data-questions="0" class="alt">🃏 Ohne Fragen (Spielkarten)</button>
+      </div>
+      <div class="choice-card">
+        <h3>👥 Team</h3>
+        <p>Zwei oder mehr Teams spielen abwechselnd, jedes mit eigenem Fortschritt und eigenen Jokern.</p>
+        <button data-mode="team" data-questions="1">❓ Mit Fragen am Bildschirm</button>
+        <button data-mode="team" data-questions="0" class="alt">🃏 Ohne Fragen (Spielkarten)</button>
+      </div>
+      <div class="choice-card">
+        <h3>🎯 Spielbrett</h3>
+        <p>Zwei Teams spielen gleichzeitig dieselbe Frage und rücken gemeinsam vor, bis eines falsch liegt und ausscheidet.</p>
+        <button data-mode="board" data-questions="1">❓ Mit Fragen am Bildschirm</button>
+        <button data-mode="board" data-questions="0" class="alt">🃏 Ohne Fragen (Spielkarten)</button>
+      </div>
+    </div>
+  `;
+  app.appendChild(wrap);
+  wrap.querySelector('#play-intro').addEventListener('click', () => SoundEngine.toggle('Intro'));
+  wrap.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => {
+    setShowQuestions(btn.dataset.questions === '1');
+    gameMode = btn.dataset.mode;
+    if(gameMode === 'solo'){ phase = 'difficulty-select'; }
+    else {
+      if(gameMode === 'board') teamNamesDraft = ['Team 1','Team 2'];
+      phase = 'team-setup';
+    }
+    render();
+  }));
+}
+
+function renderTeamSetup(){
+  const isBoard = gameMode === 'board';
+  const wrap = document.createElement('div');
+  wrap.className = 'setup-screen';
+  wrap.innerHTML = `<h2>${isBoard ? 'Spielbrett-Teams festlegen' : 'Teams festlegen'}</h2>`;
+
+  // Auswahlrunde (Fastest Finger) – beim manuellen Stoppen folgt der Abschluss-Sound
+  const soundRow = document.createElement('div');
+  soundRow.className = 'sound-row';
+  soundRow.appendChild(soundToggleButton('btn-ghost', '⚡ Auswahlrunde: Wer beginnt?', 'Auswahlrunde', (nowPlaying) => {
+    if(!nowPlaying) playOnce('Auswahlrunde_Ende');
+  }));
+  wrap.appendChild(soundRow);
+
+  const list = document.createElement('div');
+  list.className = 'team-setup-list';
+  wrap.appendChild(list);
+
+  function redrawRows(){
+    list.innerHTML = '';
+    teamNamesDraft.forEach((name, i) => {
+      const row = document.createElement('div');
+      row.className = 'team-input-row';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = `Team ${i+1}`;
+      input.value = name;
+      input.addEventListener('input', () => { teamNamesDraft[i] = input.value; });
+      row.appendChild(input);
+      if(!isBoard && teamNamesDraft.length > 2){
+        const rm = document.createElement('button');
+        rm.textContent = '✕';
+        rm.addEventListener('click', () => { teamNamesDraft.splice(i,1); redrawRows(); });
+        row.appendChild(rm);
+      }
+      list.appendChild(row);
+    });
+  }
+  redrawRows();
+
+  const actions = document.createElement('div');
+  actions.className = 'setup-actions';
+  actions.innerHTML = `
+    ${isBoard ? '' : '<button class="btn-ghost" id="add-team">+ Team hinzufügen</button>'}
+    <button class="btn-ghost" id="back-mode">Zurück</button>
+    <button class="btn-primary" id="go-difficulty">Weiter</button>
+  `;
+  wrap.appendChild(actions);
+  app.appendChild(wrap);
+
+  if(!isBoard){
+    actions.querySelector('#add-team').addEventListener('click', () => {
+      if(teamNamesDraft.length < 6){ teamNamesDraft.push(`Team ${teamNamesDraft.length+1}`); redrawRows(); }
+    });
+  }
+  actions.querySelector('#back-mode').addEventListener('click', () => { phase='mode-select'; render(); });
+  actions.querySelector('#go-difficulty').addEventListener('click', () => {
+    const cleaned = teamNamesDraft.map(n => n.trim()).filter(Boolean);
+    if(cleaned.length < 2){ showAlert('Bitte mindestens zwei Teamnamen vergeben.'); return; }
+    teamNamesDraft = cleaned;
+    phase = 'difficulty-select';
+    render();
+  });
+}
+
+function renderDifficultySelect(){
+  const wrap = document.createElement('div');
+  wrap.className = 'setup-screen';
+  wrap.innerHTML = `
+    <h2>Spielmodus wählen</h2>
+    <div class="card-row">
+      <div class="choice-card">
+        <h3>🛡️ Backup</h3>
+        <p>3 Joker (50:50, Telefon, Publikum). Dafür gibt es eine zusätzliche Gewinnabsicherung nach Frage 10 – neben der Absicherung nach Frage 5.</p>
+        <button id="pick-backup">Backup wählen</button>
+      </div>
+      <div class="choice-card">
+        <h3>🎲 Risiko</h3>
+        <p>4 Joker (50:50, Telefon, Publikum, Person). Keine zusätzliche Absicherung nach Frage 10 – nur die Absicherung nach Frage 5 gilt.</p>
+        <button id="pick-risiko">Risiko wählen</button>
+      </div>
+    </div>
+  `;
+  app.appendChild(wrap);
+  wrap.querySelector('#pick-backup').addEventListener('click', () => { difficulty='backup'; startGame(); });
+  wrap.querySelector('#pick-risiko').addEventListener('click', () => { difficulty='risiko'; startGame(); });
+}
+
+function startGame(){
+  if(gameMode === 'solo'){
+    players = [makePlayer('Solo-Spieler')];
+  } else {
+    players = teamNamesDraft.map(name => makePlayer(name));
+  }
+  activePlayerIndex = 0;
+  round = emptyRound();
+  pendingFinish = false;
+  phase = 'playing';
+  playOnce('Begruessung');
+  render();
+}
+
+/* ---------- Bausteine für das Spielbrett ---------- */
+function buildJokersGrid(player, compact){
+  const grid = document.createElement('div');
+  grid.className = 'jokers-grid' + (compact ? ' compact' : '');
+
+  const jokerDefs = [
+    { key:'fifty', id:'FuenfzigFuenfzig', label:'50:50', icon:'➗' },
+    { key:'phone', id:'Telefonjoker', label:'Telefonjoker', icon:'📞' },
+    { key:'audience', id:'Publikumsjoker', label:'Publikumsjoker', icon:'🙋' },
+  ];
+  if('person' in player.jokers){
+    jokerDefs.push({ key:'person', id:'Personenjoker', label:'Personenjoker', icon:'🎯' });
+  }
+
+  jokerDefs.forEach(def => {
+    const btn = document.createElement('button');
+    btn.className = 'joker-btn';
+    btn.disabled = player.jokers[def.key] || player.status !== 'playing';
+
+    btn.title = def.label;
+
+    const img = document.createElement('img');
+    img.src = `images/${def.id}.jpg`;
+    img.alt = def.label;
+    loadImgOrFallback(img, def.icon);
+    btn.appendChild(img);
+
+    btn.addEventListener('click', () => {
+      if(player.jokers[def.key] || player.status !== 'playing') return;
+      playOnce(def.id);
+      player.jokers[def.key] = true;
+      applyJokerEffect(def.key);
+      render();
+    });
+
+    grid.appendChild(btn);
+  });
+
+  return grid;
+}
+
+function buildLadder(player){
+  const box = document.createElement('div');
+  box.className = 'panel-box ladder-panel';
+  const title = document.createElement('p');
+  title.className = 'panel-title';
+  title.textContent = 'Übersicht';
+  box.appendChild(title);
+
+  const milestoneIndexes = difficulty === 'backup' ? [4,9,14] : [4,14];
+
+  for(let i = 14; i >= 0; i--){
+    const row = document.createElement('div');
+    const isMilestone = milestoneIndexes.includes(i);
+    let cls = 'ladder-row';
+    if(isMilestone) cls += ' milestone';
+    if(i === player.questionIndex && player.status === 'playing') cls += ' active';
+    row.className = cls;
+    row.innerHTML = `<span class="rnd">${i+1}</span><span class="amt">${fmt(LADDER[i])}</span>${isMilestone ? '<span class="shield">🛡</span>' : ''}`;
+    box.appendChild(row);
+  }
+
+  const safety = document.createElement('p');
+  safety.className = 'safety-line';
+  safety.innerHTML = `Abgesichert: <b>${fmt(player.safetyNet)}</b>`;
+  box.appendChild(safety);
+
+  return box;
+}
+
+function buildControls(player){
+  const wrap = document.createElement('div');
+
+  if(player.status !== 'playing'){
+    const msg = document.createElement('p');
+    msg.style.textAlign = 'center';
+    msg.style.color = 'var(--text-dim)';
+    msg.textContent = statusLabel(player);
+    wrap.appendChild(msg);
+    return wrap;
+  }
+
+  const panel = document.createElement('div');
+  panel.className = 'controls-panel';
+
+  panel.appendChild(soundToggleButton('ctrl-btn start', '▶ Runde starten', questionMusic(player.questionIndex), () => {
+    player.roundStarted = true;
+    beginQuestion();
+    render();
+  }));
+
+  const loginBtn = soundToggleButton('ctrl-btn login', '🔒 Einloggen', 'Einloggen');
+  loginBtn.disabled = !player.roundStarted;
+  panel.appendChild(loginBtn);
+
+  // Mit bekannter Lösung entscheidet die eingeloggte Antwort automatisch
+  if(showQuestions && round.shown && !round.revealed && round.question.richtig != null){
+    const resolveBtn = document.createElement('button');
+    resolveBtn.className = 'ctrl-btn resolve';
+    resolveBtn.textContent = '🎯 Auflösen';
+    resolveBtn.disabled = round.selected == null;
+    resolveBtn.title = round.selected == null ? 'Erst eine Antwort anklicken (einloggen)' : '';
+    resolveBtn.addEventListener('click', () => {
+      if(round.selected === round.question.richtig) answerCorrect(player);
+      else answerWrong(player);
+    });
+    panel.appendChild(resolveBtn);
+  }
+
+  const correctBtn = document.createElement('button');
+  correctBtn.className = 'ctrl-btn correct';
+  correctBtn.textContent = '✔ Richtig';
+  correctBtn.disabled = !player.roundStarted;
+  correctBtn.addEventListener('click', () => answerCorrect(player));
+  panel.appendChild(correctBtn);
+
+  const wrongBtn = document.createElement('button');
+  wrongBtn.className = 'ctrl-btn wrong';
+  wrongBtn.textContent = '✘ Falsch';
+  wrongBtn.disabled = !player.roundStarted;
+  wrongBtn.addEventListener('click', () => answerWrong(player));
+  panel.appendChild(wrongBtn);
+
+  wrap.appendChild(panel);
+  return wrap;
+}
+
+function statusLabel(player){
+  if(player.status === 'won') return `🎉 Gewonnen mit ${fmt(player.winnings)}!`;
+  if(player.status === 'lost') return `Ausgeschieden – abgesichert: ${fmt(player.winnings)}`;
+  if(player.status === 'ended') return `Spiel beendet – mitgenommen: ${fmt(player.winnings)}`;
+  return '';
+}
+
+function buildTeamColumns(isActiveFn){
+  const namesRow = document.createElement('div');
+  namesRow.className = 'team-names-row';
+  namesRow.style.setProperty('--team-count', players.length);
+
+  const columns = document.createElement('div');
+  columns.className = 'teams-columns';
+  columns.style.setProperty('--team-count', players.length);
+
+  players.forEach((p, i) => {
+    const active = isActiveFn(p, i);
+    const badge = document.createElement('div');
+    badge.className = 'team-name-badge' + (active ? ' active' : '');
+    badge.innerHTML = `${p.name}${p.status !== 'playing' ? `<span class="status">${statusLabel(p)}</span>` : ''}`;
+    namesRow.appendChild(badge);
+
+    const col = document.createElement('div');
+    col.className = 'team-col' + (active ? ' active-col' : '');
+
+    const jokerBox = document.createElement('div');
+    jokerBox.className = 'panel-box';
+    const jt = document.createElement('p');
+    jt.className = 'panel-title';
+    jt.textContent = 'Joker';
+    jokerBox.appendChild(jt);
+    jokerBox.appendChild(buildJokersGrid(p, true));
+    col.appendChild(jokerBox);
+
+    col.appendChild(buildLadder(p));
+    columns.appendChild(col);
+  });
+
+  return { namesRow, columns };
+}
+
+function buildBoardControls(){
+  const wrap = document.createElement('div');
+  const playing = players.filter(p => p.status === 'playing');
+
+  if(playing.length === 0) return wrap;
+
+  if(playing.length === 1){
+    const turn = document.createElement('p');
+    turn.className = 'turn-indicator';
+    turn.innerHTML = `Nur noch <b>${playing[0].name}</b> spielt weiter`;
+    wrap.appendChild(turn);
+    wrap.appendChild(buildControls(playing[0]));
+    return wrap;
+  }
+
+  const [teamA, teamB] = players;
+  const sharedIndex = teamA.questionIndex;
+
+  const panel = document.createElement('div');
+  panel.className = 'controls-panel';
+
+  panel.appendChild(soundToggleButton('ctrl-btn start', '▶ Runde starten', questionMusic(sharedIndex), () => {
+    boardRoundStarted = true;
+    beginQuestion();
+    render();
+  }));
+
+  const loginBtn = soundToggleButton('ctrl-btn login', '🔒 Einloggen', 'Einloggen');
+  loginBtn.disabled = !boardRoundStarted;
+  panel.appendChild(loginBtn);
+
+  // Beide Teams können unterschiedlich antworten – daher nur Lösung zeigen, gewertet wird per Team-Button
+  if(showQuestions && round.shown && !round.revealed && round.question.richtig != null){
+    const showBtn = document.createElement('button');
+    showBtn.className = 'ctrl-btn resolve';
+    showBtn.textContent = '👁 Lösung zeigen';
+    showBtn.addEventListener('click', () => { markRevealed(null); render(); });
+    panel.appendChild(showBtn);
+  }
+
+  const bothCorrectBtn = document.createElement('button');
+  bothCorrectBtn.className = 'ctrl-btn correct';
+  bothCorrectBtn.textContent = '✔ Beide richtig';
+  bothCorrectBtn.disabled = !boardRoundStarted;
+  bothCorrectBtn.addEventListener('click', boardBothCorrect);
+  panel.appendChild(bothCorrectBtn);
+
+  const aBtn = document.createElement('button');
+  aBtn.className = 'ctrl-btn correct';
+  aBtn.textContent = `${teamA.name} richtig`;
+  aBtn.disabled = !boardRoundStarted;
+  aBtn.addEventListener('click', () => boardOneCorrect(teamA, teamB));
+  panel.appendChild(aBtn);
+
+  const bBtn = document.createElement('button');
+  bBtn.className = 'ctrl-btn correct';
+  bBtn.textContent = `${teamB.name} richtig`;
+  bBtn.disabled = !boardRoundStarted;
+  bBtn.addEventListener('click', () => boardOneCorrect(teamB, teamA));
+  panel.appendChild(bBtn);
+
+  const bothWrongBtn = document.createElement('button');
+  bothWrongBtn.className = 'ctrl-btn wrong';
+  bothWrongBtn.textContent = '✘ Beide falsch';
+  bothWrongBtn.disabled = !boardRoundStarted;
+  bothWrongBtn.addEventListener('click', boardBothWrong);
+  panel.appendChild(bothWrongBtn);
+
+  wrap.appendChild(panel);
+  return wrap;
+}
+
+function finishBoardAction(){
+  boardRoundStarted = false;
+  if(!players.some(p => p.status === 'playing')){ finishGame(); }
+  render();
+}
+
+function boardBothCorrect(){
+  markRevealed('correct');
+  const playing = players.filter(p => p.status === 'playing');
+  playOnce(correctSound(playing[0].questionIndex));
+  playing.forEach(p => {
+    const idx = p.questionIndex;
+    applyMilestone(p, idx);
+    p.winnings = LADDER[idx];
+    if(idx === 14){ p.status = 'won'; }
+    else { p.questionIndex = idx + 1; }
+  });
+  finishBoardAction();
+}
+
+function boardOneCorrect(winner, loser){
+  markRevealed(null);
+  const idx = winner.questionIndex;
+  playOnce(correctSound(idx));
+  applyMilestone(winner, idx);
+  winner.winnings = LADDER[idx];
+  if(idx === 14){ winner.status = 'won'; }
+  else { winner.questionIndex = idx + 1; }
+
+  loser.winnings = loser.safetyNet;
+  loser.status = 'lost';
+
+  finishBoardAction();
+}
+
+function boardBothWrong(){
+  markRevealed('wrong');
+  const playing = players.filter(p => p.status === 'playing');
+  playOnce(wrongSound(playing[0].questionIndex));
+  playing.forEach(p => { p.winnings = p.safetyNet; p.status = 'lost'; });
+  finishBoardAction();
+}
+
+function renderPlaying(){
+  const area = document.createElement('div');
+  area.className = 'game-area';
+
+  // Ohne Fragen-Anzeige bleibt das bisherige Layout (Steuerung unter den Leitern)
+  if(gameMode === 'solo'){
+    const player = players[0];
+    const layout = document.createElement('div');
+    layout.className = 'solo-layout' + (showQuestions ? ' with-question' : '');
+
+    const jokerBox = document.createElement('div');
+    jokerBox.className = 'panel-box';
+    const jTitle = document.createElement('p');
+    jTitle.className = 'panel-title';
+    jTitle.textContent = 'Joker';
+    jokerBox.appendChild(jTitle);
+    jokerBox.appendChild(buildJokersGrid(player, false));
+
+    if(showQuestions){
+      const left = document.createElement('div');
+      left.className = 'main-col';
+      left.appendChild(buildQuestionPanel());
+      left.appendChild(pendingFinish ? buildFinishButton() : buildControls(player));
+      left.appendChild(jokerBox);
+      layout.appendChild(left);
+      layout.appendChild(buildLadder(player));
+      area.appendChild(layout);
+    } else {
+      layout.appendChild(jokerBox);
+      layout.appendChild(buildLadder(player));
+      area.appendChild(layout);
+      area.appendChild(buildControls(player));
+    }
+
+  } else {
+    const isBoard = gameMode === 'board';
+    const { namesRow, columns } = isBoard
+      ? buildTeamColumns((p) => p.status === 'playing')
+      : buildTeamColumns((p, i) => i === activePlayerIndex && p.status === 'playing');
+
+    const controls = document.createElement('div');
+    if(pendingFinish){
+      controls.appendChild(buildFinishButton());
+    } else if(isBoard){
+      controls.appendChild(buildBoardControls());
+    } else {
+      const activePlayer = players[activePlayerIndex];
+      if(activePlayer && activePlayer.status === 'playing'){
+        const turn = document.createElement('p');
+        turn.className = 'turn-indicator';
+        turn.innerHTML = `Am Zug: <b>${activePlayer.name}</b>`;
+        controls.appendChild(turn);
+        controls.appendChild(buildControls(activePlayer));
+      }
+    }
+
+    area.appendChild(namesRow);
+    if(showQuestions){
+      area.appendChild(buildQuestionPanel());
+      area.appendChild(controls);
+      area.appendChild(columns);
+    } else {
+      area.appendChild(columns);
+      area.appendChild(controls);
+    }
+  }
+
+  app.appendChild(area);
+}
+
+function buildFinishButton(){
+  const wrap = document.createElement('div');
+  wrap.className = 'controls-panel';
+  const btn = document.createElement('button');
+  btn.className = 'ctrl-btn start';
+  btn.textContent = '🏁 Zum Ergebnis';
+  btn.addEventListener('click', () => { pendingFinish = false; phase = 'finished'; render(); });
+  wrap.appendChild(btn);
+  return wrap;
+}
+
+function renderFinished(){
+  const wrap = document.createElement('div');
+  wrap.className = 'finished-screen';
+  const h = document.createElement('h2');
+  h.textContent = 'Ergebnis';
+  wrap.appendChild(h);
+
+  const sorted = [...players].sort((a,b) => b.winnings - a.winnings);
+  const topAmount = sorted.length ? sorted[0].winnings : 0;
+
+  sorted.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'result-card' + ((gameMode === 'team' || gameMode === 'board') && p.winnings === topAmount ? ' winner' : '');
+    card.innerHTML = `
+      <div>
+        <div class="name">${p.name}</div>
+        <div class="status">${statusLabel(p) || '—'}</div>
+      </div>
+      <div class="amount">${fmt(p.winnings)}</div>
+    `;
+    wrap.appendChild(card);
+  });
+
+  const soundRow = document.createElement('div');
+  soundRow.className = 'sound-row';
+  soundRow.style.marginTop = '20px';
+  soundRow.appendChild(soundToggleButton('btn-ghost', '🎉 Gewinner-Fanfare', 'Spielende_Gewinn2'));
+  soundRow.appendChild(soundToggleButton('btn-ghost', '🌙 Outro', 'Outro'));
+  wrap.appendChild(soundRow);
+
+  const again = document.createElement('button');
+  again.className = 'btn-primary';
+  again.textContent = '🔁 Neues Spiel';
+  again.addEventListener('click', resetGame);
+  wrap.appendChild(again);
+
+  app.appendChild(wrap);
+}
+
+function resetGame(){
+  stopAudio();
+  phase = 'mode-select';
+  gameMode = null;
+  difficulty = null;
+  teamNamesDraft = ['Team 1','Team 2'];
+  players = [];
+  activePlayerIndex = 0;
+  boardRoundStarted = false;
+  round = emptyRound();
+  pendingFinish = false;
+  render();
+}
+
+/* =========================================================
+   Header-Interaktionen
+========================================================= */
+document.getElementById('btn-quit').addEventListener('click', () => {
+  if(phase !== 'playing') return;
+
+  if(gameMode === 'board'){
+    const playing = players.filter(p => p.status === 'playing');
+    if(playing.length === 0) return;
+    const summary = playing.map(p => `${p.name}: ${fmt(p.winnings)}`).join(' · ');
+    showConfirm(`Spiel wirklich beenden? Mitgenommene Summen: ${summary}`, () => {
+      playing.forEach(p => { p.status = 'ended'; });
+      round = emptyRound();
+      if(playing.some(p => p.winnings > 0)) playOnce('Spielende_Gewinn1');
+      else stopAudio();
+      finishBoardAction();
+    });
+    return;
+  }
+
+  const player = players[activePlayerIndex];
+  showConfirm(
+    `${gameMode === 'team' ? player.name + ': ' : ''}Spiel wirklich beenden und mit ${fmt(player.winnings)} nach Hause gehen?`,
+    () => endGame(player)
+  );
+});
+
+const popVolume = document.getElementById('popover-volume');
+const popSettings = document.getElementById('popover-settings');
+
+document.getElementById('btn-volume').addEventListener('click', () => {
+  popSettings.classList.add('hidden');
+  popVolume.classList.toggle('hidden');
+});
+document.getElementById('btn-settings').addEventListener('click', () => {
+  popVolume.classList.add('hidden');
+  document.getElementById('settings-info').innerHTML = `
+    Modus: <b>${gameMode === 'solo' ? 'Solo' : gameMode === 'team' ? 'Team' : gameMode === 'board' ? 'Spielbrett' : '–'}</b><br>
+    Schwierigkeit: <b>${difficulty === 'backup' ? 'Backup (3 Joker)' : difficulty === 'risiko' ? 'Risiko (4 Joker)' : '–'}</b>
+  `;
+  popSettings.classList.toggle('hidden');
+});
+
+const volumeRange = document.getElementById('volume-range');
+const muteCheck = document.getElementById('mute-check');
+const musicSelect = document.getElementById('music-style');
+volumeRange.value = Math.round(SoundEngine.getVolume() * 100);
+muteCheck.checked = SoundEngine.isMuted();
+musicSelect.value = musicStyle;
+const questionsSelect = document.getElementById('show-questions');
+function setShowQuestions(on){
+  showQuestions = on;
+  saveSetting('show-questions', on);
+  questionsSelect.value = on ? '1' : '0';
+}
+questionsSelect.value = showQuestions ? '1' : '0';
+questionsSelect.addEventListener('change', (e) => {
+  setShowQuestions(e.target.value === '1');
+  if(!showQuestions && pendingFinish){ pendingFinish = false; phase = 'finished'; }
+  render();
+});
+
+volumeRange.addEventListener('input', (e) => { SoundEngine.setVolume(Number(e.target.value) / 100); });
+muteCheck.addEventListener('change', (e) => { SoundEngine.setMuted(e.target.checked); });
+musicSelect.addEventListener('change', (e) => {
+  musicStyle = e.target.value;
+  saveSetting('music-style', musicStyle);
+  render();
+});
+document.getElementById('btn-restart').addEventListener('click', () => {
+  popSettings.classList.add('hidden');
+  showConfirm('Wirklich ein neues Spiel starten? Der aktuelle Fortschritt geht verloren.', resetGame);
+});
+
+document.addEventListener('click', (e) => {
+  if(!popVolume.contains(e.target) && e.target.id !== 'btn-volume') popVolume.classList.add('hidden');
+  if(!popSettings.contains(e.target) && e.target.id !== 'btn-settings') popSettings.classList.add('hidden');
+});
+
+render();
+</script>
+</body>
+</html>
